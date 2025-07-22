@@ -3,7 +3,6 @@ import {
   doc, 
   addDoc, 
   getDocs, 
-  getDoc,
   updateDoc, 
   deleteDoc, 
   query, 
@@ -194,17 +193,17 @@ export const initializeDefaultData = async () => {
       { id: 'extraccion', name: 'Extracción dental', duration: '45 min', price: 70 },
       { id: 'endodoncia', name: 'Endodoncia', duration: '90 min', price: 150 },
       { id: 'blanqueamiento', name: 'Blanqueamiento dental', duration: '60 min', price: 120 },
-      { id: 'implante', name: 'Consulta implantes', duration: '45 min', price: 200 },
-      { id: 'revision', name: 'Revisión general', duration: '30 min', price: 40 }
+      { id: 'implante', name: 'Implante dental', duration: '120 min', price: 800 },
+      { id: 'corona', name: 'Corona dental', duration: '90 min', price: 400 }
     ];
 
     // Default dentists
     const defaultDentists = [
       { id: 'juan', name: 'Dr. Juan Carlos', specialty: 'Odontología general', available: true },
-      { id: 'carla', name: 'Dra. Carla Mendoza', specialty: 'Endodoncia', available: true },
-      { id: 'miguel', name: 'Dr. Miguel Torres', specialty: 'Ortodoncia', available: true },
-      { id: 'sofia', name: 'Dra. Sofía Ramírez', specialty: 'Cirugía oral', available: true },
-      { id: 'ricardo', name: 'Dr. Ricardo López', specialty: 'Periodoncia', available: true }
+      { id: 'maria', name: 'Dra. María González', specialty: 'Odontología estética', available: true },
+      { id: 'carlos', name: 'Dr. Carlos Mendoza', specialty: 'Cirugía oral', available: true },
+      { id: 'ana', name: 'Dra. Ana Ruiz', specialty: 'Ortodoncia', available: true },
+      { id: 'luis', name: 'Dr. Luis Herrera', specialty: 'Endodoncia', available: true }
     ];
 
     // Add treatments
@@ -221,6 +220,151 @@ export const initializeDefaultData = async () => {
     return { success: true };
   } catch (error) {
     console.error("Error initializing default data:", error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
+// Initialize complete data set (improved version)
+export const initializeData = async () => {
+  try {
+    console.log(" Iniciando carga de datos completos...");
+    
+    // Complete treatments with more details
+    const completeTreatments = [
+      {
+        name: "Limpieza dental",
+        duration: "30 min",
+        price: 50,
+        description: "Limpieza profunda y eliminación de placa bacteriana",
+        category: "preventiva"
+      },
+      {
+        name: "Tratamiento de caries",
+        duration: "45 min",
+        price: 80,
+        description: "Eliminación de caries y restauración dental",
+        category: "restaurativa"
+      },
+      {
+        name: "Consulta ortodoncia",
+        duration: "60 min",
+        price: 100,
+        description: "Evaluación y plan de tratamiento ortodóntico",
+        category: "ortodoncia"
+      },
+      {
+        name: "Extracción dental",
+        duration: "45 min",
+        price: 70,
+        description: "Extracción de pieza dental dañada",
+        category: "cirugía"
+      },
+      {
+        name: "Endodoncia",
+        duration: "90 min",
+        price: 150,
+        description: "Tratamiento de conducto radicular",
+        category: "endodoncia"
+      },
+      {
+        name: "Blanqueamiento dental",
+        duration: "60 min",
+        price: 120,
+        description: "Tratamiento estético para blanquear dientes",
+        category: "estética"
+      },
+      {
+        name: "Implante dental",
+        duration: "120 min",
+        price: 800,
+        description: "Colocación de implante dental",
+        category: "implantología"
+      },
+      {
+        name: "Coronas de porcelana",
+        duration: "90 min",
+        price: 400,
+        description: "Colocación de corona de porcelana",
+        category: "restaurativa"
+      }
+    ];
+
+    // Complete dentists with more details
+    const completeDentists = [
+      {
+        name: "Dr. Juan Carlos",
+        specialty: "Odontología general",
+        available: true,
+        schedule: ["lunes", "martes", "miércoles", "jueves", "viernes"],
+        experience: "10 años",
+        image: "https://via.placeholder.com/150"
+      },
+      {
+        name: "Dra. María González",
+        specialty: "Odontología estética",
+        available: true,
+        schedule: ["lunes", "miércoles", "viernes"],
+        experience: "8 años",
+        image: "https://via.placeholder.com/150"
+      },
+      {
+        name: "Dr. Carlos Mendoza",
+        specialty: "Cirugía oral",
+        available: true,
+        schedule: ["martes", "jueves", "sábado"],
+        experience: "12 años",
+        image: "https://via.placeholder.com/150"
+      },
+      {
+        name: "Dra. Ana Ruiz",
+        specialty: "Ortodoncia",
+        available: true,
+        schedule: ["lunes", "martes", "miércoles", "jueves", "viernes"],
+        experience: "6 años",
+        image: "https://via.placeholder.com/150"
+      },
+      {
+        name: "Dr. Luis Herrera",
+        specialty: "Endodoncia",
+        available: true,
+        schedule: ["martes", "miércoles", "jueves"],
+        experience: "15 años",
+        image: "https://via.placeholder.com/150"
+      }
+    ];
+
+    console.log(" Agregando tratamientos...");
+    // Add treatments in parallel
+    const treatmentPromises = completeTreatments.map(treatment => 
+      addDoc(collection(db, TREATMENTS_COLLECTION), {
+        ...treatment,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      })
+    );
+    await Promise.all(treatmentPromises);
+    console.log(` ${completeTreatments.length} tratamientos agregados`);
+
+    console.log(" Agregando dentistas...");
+    // Add dentists in parallel
+    const dentistPromises = completeDentists.map(dentist => 
+      addDoc(collection(db, DENTISTS_COLLECTION), {
+        ...dentist,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      })
+    );
+    await Promise.all(dentistPromises);
+    console.log(` ${completeDentists.length} dentistas agregados`);
+
+    console.log(" ¡Datos inicializados exitosamente!");
+    return { success: true };
+    
+  } catch (error) {
+    console.error("Error initializing data:", error);
     return {
       success: false,
       error: error.message

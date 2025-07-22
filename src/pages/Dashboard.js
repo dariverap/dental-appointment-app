@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Clock, User, Plus, CheckCircle, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { getUserAppointments, cancelAppointment, getDentists, getTreatments } from '../firebase/firestore';
@@ -9,24 +9,20 @@ const Dashboard = ({ user }) => {
   const [treatments, setTreatments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [needsDataInitialization, setNeedsDataInitialization] = useState(false);
+  const [initializingData, setInitializingData] = useState(false);
 
   // Load data on component mount
-  useEffect(() => {
-    if (user?.uid) {
-      loadDashboardData();
-    }
-  }, [user]);
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     setLoading(true);
     setError('');
 
     try {
       // Load appointments, dentists, and treatments in parallel
-      const [appointmentsResult, dentistsResult, treatmentsResult] = await Promise.all([
+      const [appointmentsResult, treatmentsResult, dentistsResult] = await Promise.all([
         getUserAppointments(user.uid),
-        getDentists(),
-        getTreatments()
+        getTreatments(),
+        getDentists()
       ]);
 
       if (appointmentsResult.success) {
@@ -35,19 +31,51 @@ const Dashboard = ({ user }) => {
         console.error('Error loading appointments:', appointmentsResult.error);
       }
 
+      if (treatmentsResult.success) {
+        setTreatments(treatmentsResult.treatments);
+      }
+
       if (dentistsResult.success) {
         setDentists(dentistsResult.dentists);
       }
 
-      if (treatmentsResult.success) {
-        setTreatments(treatmentsResult.treatments);
-      }
+      // Check if we need to initialize data
+      const needsInitialization = 
+        (!treatmentsResult.success || treatmentsResult.treatments.length === 0) ||
+        (!dentistsResult.success || dentistsResult.dentists.length === 0);
+
+      setNeedsDataInitialization(needsInitialization);
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       setError('Error al cargar los datos. Por favor, intenta nuevamente.');
     } finally {
       setLoading(false);
+    }
+  }, [user.uid]);
+
+  useEffect(() => {
+    if (user?.uid) {
+      loadDashboardData();
+    }
+  }, [loadDashboardData, user]);
+
+  const initializeData = async () => {
+    setInitializingData(true);
+    try {
+      // Import and execute the data loading function
+      const { loadAllData } = await import('../scripts/loadAllData');
+      await loadAllData();
+      
+      // Reload dashboard data
+      await loadDashboardData();
+      
+      alert('¡Datos inicializados exitosamente! Ya puedes crear citas.');
+    } catch (error) {
+      console.error('Error initializing data:', error);
+      alert('Error al inicializar datos. Por favor, intenta nuevamente.');
+    } finally {
+      setInitializingData(false);
     }
   };
 
@@ -133,6 +161,39 @@ const Dashboard = ({ user }) => {
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-dental-blue-600 mx-auto"></div>
               <p className="mt-4 text-dental-gray-600">Cargando tus citas...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (needsDataInitialization) {
+    return (
+      <div className="min-h-screen bg-dental-gray-50 pt-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <AlertCircle className="mx-auto h-12 w-12 text-dental-gray-400" />
+              <h3 className="mt-4 text-lg font-medium text-dental-gray-900">
+                No hay datos disponibles
+              </h3>
+              <p className="mt-2 text-dental-gray-600">
+                Por favor, inicializa los datos para comenzar a crear citas.
+              </p>
+              <div className="mt-6">
+                <button 
+                  onClick={initializeData}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-dental-blue-600 hover:bg-dental-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dental-blue-500"
+                >
+                  {initializingData ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mx-auto"></div>
+                  ) : (
+                    <Plus className="h-4 w-4 mr-2" />
+                  )}
+                  {initializingData ? 'Iniciando...' : 'Inicializar Datos'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
