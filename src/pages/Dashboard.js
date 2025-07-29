@@ -14,6 +14,7 @@ const Dashboard = ({ user }) => {
 
   // Load data on component mount
   const loadDashboardData = useCallback(async () => {
+    console.log(" Cargando datos del dashboard para usuario:", user?.uid);
     setLoading(true);
     setError('');
 
@@ -25,18 +26,30 @@ const Dashboard = ({ user }) => {
         getDentists()
       ]);
 
+      console.log(" Resultados obtenidos:", {
+        appointments: appointmentsResult,
+        treatments: treatmentsResult.success ? treatmentsResult.treatments.length : 'Error',
+        dentists: dentistsResult.success ? dentistsResult.dentists.length : 'Error'
+      });
+
       if (appointmentsResult.success) {
+        console.log(" Citas cargadas exitosamente:", appointmentsResult.appointments.length);
         setAppointments(appointmentsResult.appointments);
       } else {
-        console.error('Error loading appointments:', appointmentsResult.error);
+        console.error(' Error loading appointments:', appointmentsResult.error);
+        setError('Error al cargar las citas: ' + appointmentsResult.error);
       }
 
       if (treatmentsResult.success) {
         setTreatments(treatmentsResult.treatments);
+      } else {
+        console.error(' Error loading treatments:', treatmentsResult.error);
       }
 
       if (dentistsResult.success) {
         setDentists(dentistsResult.dentists);
+      } else {
+        console.error(' Error loading dentists:', dentistsResult.error);
       }
 
       // Check if we need to initialize data
@@ -46,8 +59,12 @@ const Dashboard = ({ user }) => {
 
       setNeedsDataInitialization(needsInitialization);
 
+      if (needsInitialization) {
+        console.log(" Se requiere inicialización de datos");
+      }
+
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      console.error(' Error loading dashboard data:', error);
       setError('Error al cargar los datos. Por favor, intenta nuevamente.');
     } finally {
       setLoading(false);

@@ -42,17 +42,23 @@ export const createAppointment = async (appointmentData) => {
 // Get user appointments
 export const getUserAppointments = async (userId) => {
   try {
+    console.log(" Buscando citas para usuario:", userId);
+    
+    // First, try a simple query without orderBy to avoid index issues
     const q = query(
       collection(db, APPOINTMENTS_COLLECTION),
-      where("userId", "==", userId),
-      orderBy("date", "desc")
+      where("userId", "==", userId)
     );
     
     const querySnapshot = await getDocs(q);
     const appointments = [];
     
+    console.log(" Documentos encontrados:", querySnapshot.size);
+    
     querySnapshot.forEach((doc) => {
       const data = doc.data();
+      console.log(" Documento encontrado:", doc.id, data);
+      
       appointments.push({
         id: doc.id,
         ...data,
@@ -62,12 +68,23 @@ export const getUserAppointments = async (userId) => {
       });
     });
 
+    // Sort appointments by date in JavaScript (newest first)
+    appointments.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    console.log(" Citas procesadas:", appointments.length);
+
     return {
       success: true,
       appointments
     };
   } catch (error) {
-    console.error("Error getting appointments:", error);
+    console.error(" Error getting appointments:", error);
+    console.error("Error details:", {
+      code: error.code,
+      message: error.message,
+      userId: userId
+    });
+    
     return {
       success: false,
       error: error.message,
